@@ -1,4 +1,4 @@
---getting services
+--getting services by using getservice function and assigning them into a new variable name by using local Name
 local RS = game:GetService("ReplicatedStorage")
 local TS = game:GetService("TweenService")
 local LT = game:GetService("Lighting")
@@ -8,9 +8,9 @@ local Players = game:GetService("Players")
 local DSS = game:GetService("DataStoreService")
 local PlayerAllData = DSS:GetDataStore("PlayerAllData")
 local Debris = game:GetService("Debris")
---detecting when player is added
+--detecting when player is added by using playeradded and doing connect functions so we connect the function that will happen with that
 game.Players.PlayerAdded:Connect(function(Player)
-	--adding datas and getting if there is a saved data
+	--adding datas and getting if there is a saved data by adding a new folder and doing values one by one then we change values of them by getting the saved ones using getasync if not it will randomly give values
 	local AllDatas = Instance.new("Folder")  --Sets up leaderstats folder
 	AllDatas.Name = "leaderstats"
 	AllDatas.Parent = Player
@@ -41,31 +41,31 @@ game.Players.PlayerAdded:Connect(function(Player)
 			BadKarma.Value = 0
 		end
 	end
-	--detecting when character adds
+	--detecting when character is added by using playeradded and doing connect functions so we connect the function that will happen with that
 	Player.CharacterAdded:Connect(function(Character)
-		--waiting until characters needed parts are loaded
+		--waiting until characters needed parts are loaded so we can do scripting without warning
 		repeat
-			wait()
+			wait() -- repeating wait until all is loaded
 		until Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Head")
-		--making sure
+		--waiting 2 seconds so if there is an issue with waiting it will wait 2 seconds more
 		wait(2)
-		--giving random colors to each character part
+		--giving random colors to each character body part
 		for i,v in pairs(Character:GetChildren()) do
 			if v:IsA("BasePart") then
 				v.BrickColor = BrickColor.random()
 			end
 		end
-		--Setting humanoid thingys
+		--Setting humanoid speed and jumppower
 		Character.Humanoid.WalkSpeed = 64
 		if Character.Humanoid.JumpPower then
 			Character.Humanoid.WalkSpeed = 100
 		elseif Character.Humanoid.JumpHeight then
 			Character.Humanoid.JumpHeight = 14.4
 		end
-		--making sure it doesnt glitch when we add rainbow parts
+		--making sure it doesnt glitch when we add rainbow parts by making player higher so if new part is very big it doesnt glitch under map
 		Character.HumanoidRootPart.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0,25,0)
-		-- adding rainbow part glowing eyes and tweening them
-		local Part = Instance.new("Part")
+		-- adding rainbow part that will keep changing size under player then we add glowing eyes and keep tweening them
+		local Part = Instance.new("Part") -- adding new part
 		Part.Name = Character.Name
 		Part.Anchored = false
 		Part.CanCollide = true
@@ -73,7 +73,7 @@ game.Players.PlayerAdded:Connect(function(Player)
 		Part.CanTouch = true
 		Part.Transparency = 0
 		print("Part Created")
-		local Weld = Instance.new("Weld")
+		local Weld = Instance.new("Weld") --doing welding
 		Weld.Name = "Partweld"
 		Weld.Part0 = Character.HumanoidRootPart
 		Weld.Part1 = Part
@@ -81,15 +81,15 @@ game.Players.PlayerAdded:Connect(function(Player)
 		Weld.Parent = Part
 		Part.Parent = Character
 		print("Part Welded")
-		--adding katana depending on the good or bad
+		--adding katana depending on the good or bad side you are katana changing depending on your side
 		if Race.Value == "Bad" then
-			local Katana = SS:WaitForChild("Katana"):Clone()
+			local Katana = SS:WaitForChild("Katana"):Clone() -- cloning
 			Katana.Parent = Player.Character
-			local Weld = Instance.new("Weld",Player.Character["LowerTorso"])
+			local Weld = Instance.new("Weld",Player.Character["LowerTorso"])--basic welding
 			Weld.Part0 = Player.Character["LowerTorso"]
 			Weld.Part1 = Katana.Sheathe.SheatheHandle
 			Weld.C1 = CFrame.new(0.75,1.25,-1.05) * CFrame.Angles(-55,math.rad(25),math.rad(-90))
-			local CrR2 = Instance.new("Sound", Player.Character.HumanoidRootPart)
+			local CrR2 = Instance.new("Sound", Player.Character.HumanoidRootPart)--adding sfx
 			CrR2.Name = "CrR2"
 			CrR2.Volume = 0.5
 			CrR2.Looped = false
@@ -97,7 +97,7 @@ game.Players.PlayerAdded:Connect(function(Player)
 			CrR2.Playing = true
 			game.Debris:AddItem(CrR2, 1)
 		elseif Race.Value == "Good" then
-			local Katana = SS:WaitForChild("Katana2"):Clone()
+			local Katana = SS:WaitForChild("Katana2"):Clone() --cloning
 			Katana.Parent = Player.Character
 			local Weld = Instance.new("Weld",Player.Character["LowerTorso"])
 			Weld.Part0 = Player.Character["LowerTorso"]
@@ -127,7 +127,7 @@ game.Players.PlayerAdded:Connect(function(Player)
 				end
 			end)
 		end)
-		--adding eyes
+		--adding eyes by creating a part for each eye and weld them by creating a weld for each part
 		task.spawn(function()
 			local Head = Character:WaitForChild("Head", 5)
 			if not Head then
