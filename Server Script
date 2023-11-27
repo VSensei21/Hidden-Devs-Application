@@ -1,220 +1,35 @@
---getting services by using getservice function and assigning them into a new variable name by using local Name
+local UIS = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
-local TS = game:GetService("TweenService")
-local LT = game:GetService("Lighting")
-local SS = game:GetService("ServerStorage")
-local SSS = game:GetService("ServerScriptService")
-local Players = game:GetService("Players")
-local DSS = game:GetService("DataStoreService")
-local PlayerAllData = DSS:GetDataStore("PlayerAllData")
-local Debris = game:GetService("Debris")
---detecting when player is added by using playeradded and doing connect functions so we connect the function that will happen with that
-game.Players.PlayerAdded:Connect(function(Player)
-	--adding datas and getting if there is a saved data by adding a new folder and doing values one by one then we change values of them by getting the saved ones using getasync if not it will randomly give values
-	local AllDatas = Instance.new("Folder")  --Sets up leaderstats folder
-	AllDatas.Name = "leaderstats"
-	AllDatas.Parent = Player
-	local Race = Instance.new("StringValue") --Sets up value for leaderstats
-	Race.Name = "Race"
-	Race.Parent = AllDatas
-	local Yen = Instance.new("NumberValue") --Sets up value for leaderstats
-	Yen.Name = "Yen"
-	Yen.Parent = AllDatas
-	local GoodKarma = Instance.new("BoolValue") --Sets up value for leaderstats
-	GoodKarma.Name = "GoodKarma"
-	GoodKarma.Parent = AllDatas
-	local BadKarma = Instance.new("BoolValue") --Sets up value for leaderstats
-	BadKarma.Name = "BadKarma"
-	BadKarma.Parent = AllDatas
-	local playerUserId = "Player_" .. Player.UserId  --Gets player ID
-	local data = PlayerAllData:GetAsync(playerUserId)  --Checks if player has stored data
-	if data then
-		Race.Value = data["Race"]
-		print("Loaded data")
-	else
-		local RandomRace = math.random(1,2)
-		if RandomRace == 1 then
-			Race.Value = "Good"
-			GoodKarma.Value = 0
-		elseif RandomRace == 2 then
-			Race.Value = "Bad"
-			BadKarma.Value = 0
+RS:WaitForChild("RemoteEvent").OnServerEvent:Connect(function(Player,Action,Mouse) -- receiving from server
+	RS:WaitForChild("RemoteEvent"):FireAllClients(Player,Action,Mouse) -- firing to all clients
+	if Action == "FlameAura" then -- if specific skill then it makes it go up for a second
+		Player.Character.HumanoidRootPart.Anchored = true
+		task.delay(1,function()
+			Player.Character.HumanoidRootPart.Anchored = false
+		end)
+		local fp = Player.Character.HumanoidRootPart.CFrame * CFrame.new(0,25,0)
+		local raycastparams = RaycastParams.new()
+		raycastparams.FilterType = Enum.RaycastFilterType.Include
+		raycastparams.FilterDescendantsInstances = {game.Workspace}
+		local Ray = workspace:Raycast(Player.Character.HumanoidRootPart.Position, Player.Character.HumanoidRootPart.CFrame.LookVector * 100, raycastparams)
+		local finalpos
+		local prev = Player.Character:FindFirstChild("HumanoidRootPart").CFrame
+		local dist
+		if Ray ~= nil then
+			finalpos = Player.Character:FindFirstChild("HumanoidRootPart").CFrame - Player.Character:FindFirstChild("HumanoidRootPart").Position + Ray.Position
+			fp = finalpos
+			dist = (Player.Character:FindFirstChild("HumanoidRootPart").Position-finalpos.Position).Magnitude
+			game.TweenService:Create(Player.Character:FindFirstChild("HumanoidRootPart"), TweenInfo.new(dist/120, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {CFrame = finalpos + Vector3.new(0,1,0)}):Play()
+		else
+			finalpos = Player.Character:FindFirstChild("HumanoidRootPart").CFrame * CFrame.new(0,25,0)
+			fp = finalpos
+			dist = (Player.Character:FindFirstChild("HumanoidRootPart").Position-finalpos.Position).Magnitude
+			game.TweenService:Create(Player.Character:FindFirstChild("HumanoidRootPart"), TweenInfo.new(dist/120, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {CFrame = finalpos}):Play()
 		end
 	end
-	--detecting when character is added by using playeradded and doing connect functions so we connect the function that will happen with that
-	Player.CharacterAdded:Connect(function(Character)
-		--waiting until characters needed parts are loaded so we can do scripting without warning
-		repeat
-			wait() -- repeating wait until all is loaded
-		until Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Head")
-		--waiting 2 seconds so if there is an issue with waiting it will wait 2 seconds more
-		wait(2)
-		--giving random colors to each character body part
-		for i,v in pairs(Character:GetChildren()) do
-			if v:IsA("BasePart") then
-				v.BrickColor = BrickColor.random()
-			end
-		end
-		--Setting humanoid speed and jumppower
-		Character.Humanoid.WalkSpeed = 64
-		if Character.Humanoid.JumpPower then
-			Character.Humanoid.WalkSpeed = 100
-		elseif Character.Humanoid.JumpHeight then
-			Character.Humanoid.JumpHeight = 14.4
-		end
-		--making sure it doesnt glitch when we add rainbow parts by making player higher so if new part is very big it doesnt glitch under map
-		Character.HumanoidRootPart.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0,25,0)
-		-- adding rainbow part that will keep changing size under player then we add glowing eyes and keep tweening them
-		local Part = Instance.new("Part") -- adding new part
-		Part.Name = Character.Name
-		Part.Anchored = false
-		Part.CanCollide = true
-		Part.CanQuery = true
-		Part.CanTouch = true
-		Part.Transparency = 0
-		print("Part Created")
-		local Weld = Instance.new("Weld") --doing welding
-		Weld.Name = "Partweld"
-		Weld.Part0 = Character.HumanoidRootPart
-		Weld.Part1 = Part
-		Weld.C0 = CFrame.new(0,-25,0)
-		Weld.Parent = Part
-		Part.Parent = Character
-		print("Part Welded")
-		--adding katana depending on the good or bad side you are katana changing depending on your side
-		if Race.Value == "Bad" then
-			local Katana = SS:WaitForChild("Katana"):Clone() -- cloning
-			Katana.Parent = Player.Character
-			local Weld = Instance.new("Weld",Player.Character["LowerTorso"])--basic welding
-			Weld.Part0 = Player.Character["LowerTorso"]
-			Weld.Part1 = Katana.Sheathe.SheatheHandle
-			Weld.C1 = CFrame.new(0.75,1.25,-1.05) * CFrame.Angles(-55,math.rad(25),math.rad(-90))
-			local CrR2 = Instance.new("Sound", Player.Character.HumanoidRootPart)--adding sfx
-			CrR2.Name = "CrR2"
-			CrR2.Volume = 0.5
-			CrR2.Looped = false
-			CrR2.SoundId = "rbxassetid://481731911"
-			CrR2.Playing = true
-			game.Debris:AddItem(CrR2, 1)
-		elseif Race.Value == "Good" then
-			local Katana = SS:WaitForChild("Katana2"):Clone() --cloning
-			Katana.Parent = Player.Character
-			local Weld = Instance.new("Weld",Player.Character["LowerTorso"])
-			Weld.Part0 = Player.Character["LowerTorso"]
-			Weld.Part1 = Katana.Sheathe.SheatheHandle
-			Weld.C1 = CFrame.new(0.75,1.25,-1.05) * CFrame.Angles(-55,math.rad(25),math.rad(-90))
-			local CrR2 = Instance.new("Sound", Player.Character.HumanoidRootPart)
-			CrR2.Name = "CrR2"
-			CrR2.Volume = 0.5
-			CrR2.Looped = false
-			CrR2.SoundId = "rbxassetid://481731911"
-			CrR2.Playing = true
-			game.Debris:AddItem(CrR2, 1)
-		end
-		task.spawn(function()
-			--adding a value to the karma each time you die
-			local humanoid = Character:WaitForChild("Humanoid", 5)
-			if not humanoid then
-				return
-			end
-			humanoid.Died:Connect(function()
-				print("Player died!")
-				BadKarma.Value += 1
-				if Race.Value == "Good" then
-					GoodKarma.Value += 1
-				elseif Race.Value == "Bad" then
-					BadKarma.Value += 1
-				end
-			end)
-		end)
-		--adding eyes by creating a part for each eye and weld them by creating a weld for each part
-		task.spawn(function()
-			local Head = Character:WaitForChild("Head", 5)
-			if not Head then
-				return
-			end
-			local Part1 = Instance.new("Part")
-			Part1.Shape = "Ball"
-			Part1.Material = Enum.Material.Neon
-			Part1.Name = Character.Name
-			Part1.Anchored = false
-			Part1.CanCollide = true
-			Part1.CanQuery = true
-			Part1.CanTouch = true
-			Part1.Transparency = 0
-			Part1.Size = Vector3.new(0.1,0.1,0.1)
-			print("Part Created")
-			local Weld = Instance.new("Weld")
-			Weld.Name = "Partweld"
-			Weld.Part0 = Character.Head
-			Weld.Part1 = Part1
-			Weld.C0 = CFrame.new(0.15,0.2,-0.6)
-			Weld.Parent = Part1
-			Part1.Parent = Character
-			print("Part Welded")
-			local Part2 = Instance.new("Part")
-			Part2.Shape = "Ball"
-			Part2.Material = Enum.Material.Neon
-			Part2.Name = Character.Name
-			Part2.Anchored = false
-			Part2.CanCollide = true
-			Part2.CanQuery = true
-			Part2.CanTouch = true
-			Part2.Transparency = 0
-			Part2.Size = Vector3.new(0.1,0.1,0.1)
-			print("Part Created")
-			local Weld = Instance.new("Weld")
-			Weld.Name = "Partweld"
-			Weld.Part0 = Character.Head
-			Weld.Part1 = Part2
-			Weld.C0 = CFrame.new(-0.15,0.2,-0.6)
-			Weld.Parent = Part2
-			Part2.Parent = Character
-			print("Part Welded")
-			while true do
-				print("Keeps Repeating Tween")
-				local goal1 = {}
-				goal1.Color = Color3.new(math.random(0,360),math.random(0,360),math.random(0,360))
-				local goal2 = {}
-				goal2.Color = Color3.new(math.random(0,360),math.random(0,360),math.random(0,360))
-				local tweenInfo1 = TweenInfo.new(1)
-				local tweenInfo2 = TweenInfo.new(1)
-				local tween = TS:Create(Part1, tweenInfo1, goal1)
-				local tween2 = TS:Create(Part2, tweenInfo2, goal2)
-				tween:Play()
-				tween2:Play()
-				task.wait(1)
-			end
-		end)
-		while true do
-			print("Keeps Repeating Tween")
-			local goal = {}
-			goal.Color = Color3.new(math.random(0,360),math.random(0,360),math.random(0,360))
-			goal.Size = Vector3.new(math.random(0,50),math.random(0,50),math.random(0,50))
-			local tweenInfo = TweenInfo.new(1)
-			local tween = TS:Create(Part, tweenInfo, goal)
-			tween:Play()
-			task.wait(1)
-		end
-	end)
 end)
---getting datas inside the folder and making a table in order to save all
-local function create_table(player)
-	local player_stats = {}
-	for _, stat in pairs(player.leaderstats:GetChildren()) do
-		player_stats[stat.Name] = stat.Value
-	end
-	return player_stats
-end
---saving datas
-game.Players.PlayerRemoving:Connect(function(Player)
-	local player_stats = create_table(Player)
-	local success, err = pcall(function()
-		local playerUserId = "Player_" .. Player.UserId
-		PlayerAllData:SetAsync(playerUserId, player_stats) --Saves player data
-		print("Saved")
-	end)
-	if not success then
-		warn('Could not save data!')
+RS:WaitForChild("HitBoxRemoteEvent").OnServerEvent:Connect(function(Player,Action,Damage,HittedCharacter)
+	if Action == "Damage" then
+		HittedCharacter.Humanoid:TakeDamage(Damage) -- damage
 	end
 end)
