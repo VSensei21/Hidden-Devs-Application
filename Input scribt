@@ -1,0 +1,275 @@
+task.wait(3)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local HitBoxRemote = ReplicatedStorage:WaitForChild("HitBoxRemote")
+
+local SkillDatas = require(ReplicatedStorage:WaitForChild("System"):WaitForChild("SkillDatas"))
+
+--local Mouse = script.Parent.Parent:GetMouse()
+
+local HoldingKey = false
+local HoldingKey2 = false
+task.delay(1,function()
+	HoldingKey = nil
+	HoldingKey2 = nil
+end)
+local KeysTable = {"R","F","C","E","T"}
+
+local CantUse = false
+
+local CantUseAgain = false
+
+local LastUsed
+
+local Data
+
+local CooldownTable = {}
+
+UserInputService.InputBegan:Connect(function(Input,IsTyping)
+	if IsTyping then return end
+	task.spawn(function()
+		if Input.KeyCode.Name == "W" or Input.KeyCode.Name == "S" or Input.KeyCode.Name == "A" or Input.KeyCode.Name == "D" then
+			ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("ChangeMovement",Input.KeyCode.Name,true)
+		end
+	end)
+	--table.insert(CooldownTable,HoldingKey)
+	
+	if CantUse == false and HoldingKey2 == nil and CantUseAgain == false and script.Parent.Parent.Character:GetAttribute("Stunned") == false  and script.Parent.Parent.Character:FindFirstChild("Configuration"):GetAttribute("ServerHolding") == false and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
+		if Input.KeyCode.Name ~= "Unknown" then 
+			if CooldownTable[Input.KeyCode.Name] ~= true then else return end 
+		elseif Input.UserInputType.Name ~= "Unknown" then 
+			if CooldownTable[Input.UserInputType.Name] ~= true then else return end 
+		end
+		
+		if Input.KeyCode.Name ~= "Unknown" then
+			HoldingKey = Input.KeyCode.Name
+		elseif Input.UserInputType.Name ~= "Unknown" then
+			HoldingKey = Input.UserInputType.Name
+		end
+		
+		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")]
+		for i,v in pairs(FindingData) do
+			if FindingData[i] then
+				if FindingData[i].KeyCode then
+					if FindingData[i].KeyCode == HoldingKey then
+						Data = FindingData[i]
+						if not ReplicatedStorage:FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(script.Parent.Parent.Character.Configuration:GetAttribute("Class")):FindFirstChild(Data.Name) then return end
+					end
+				end
+			end
+		end
+		
+		if CooldownTable[Data.Name] ~= true then else return end
+		
+		if Input.KeyCode.Name ~= "Unknown" then
+			HoldingKey2 = Input.KeyCode.Name
+		elseif Input.UserInputType.Name ~= "Unknown" then
+			HoldingKey2 = Input.UserInputType.Name
+		end
+		
+		
+		CantUseAgain = true
+		CantUse = true
+		LastUsed = tick()
+		ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("Start",Input.KeyCode.Name,Input.UserInputType.Name,Data,{game.Players.LocalPlayer:GetMouse().Hit})
+		task.delay(Data["AutoRelease"],function()
+			if CantUseAgain == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
+				
+				CantUseAgain = nil
+
+				repeat
+					wait()
+				until script.Parent.Parent.Character:WaitForChild("Configuration"):GetAttribute("ServerHolding") == true and CantUse == true and (tick() - LastUsed) >= Data["MinimumHoldingDuration"]
+
+				if CantUse == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) --[[ and script.Parent.Parent.Character:GetAttribute("Stunned") == false]] then
+					CooldownTable[Data.Name] = true
+					task.delay(Data.Cooldown,function()
+						CooldownTable[Data.Name] = nil
+					end)
+					ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("End",Input.KeyCode.Name,Input.UserInputType.Name,Data,{game.Players.LocalPlayer:GetMouse().Hit})
+					HoldingKey = nil
+					HoldingKey2 = nil
+					CantUse = false
+					CantUseAgain = false
+				end
+			end
+		end)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input,IsTyping)
+	if IsTyping then return end
+	task.spawn(function()
+		if Input.KeyCode.Name == "W" or Input.KeyCode.Name == "S" or Input.KeyCode.Name == "A" or Input.KeyCode.Name == "D" then
+			ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("ChangeMovement",Input.KeyCode.Name,false)
+		end
+	end)
+	
+	if CantUseAgain == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
+		CantUseAgain = nil
+		
+		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")]
+			for i,v in pairs(FindingData) do
+				if FindingData[i] then
+					if FindingData[i].KeyCode then
+						if FindingData[i].KeyCode == HoldingKey then
+							Data = FindingData[i]
+							if not ReplicatedStorage:FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(script.Parent.Parent.Character.Configuration:GetAttribute("Class")):FindFirstChild(Data.Name) then return end
+						end
+					end
+				end
+			end
+		
+		repeat
+			wait()
+		until script.Parent.Parent.Character:WaitForChild("Configuration"):GetAttribute("ServerHolding") == true --[[and script.Parent.Parent.Character:GetAttribute("Stunned") == true]] and CantUse == true and (tick() - LastUsed) >= Data["MinimumHoldingDuration"]
+		
+		if CantUse == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) --[[and script.Parent.Parent.Character:GetAttribute("Stunned") == true]] then
+			CooldownTable[Data.Name] = true
+			task.delay(Data.Cooldown,function()
+				CooldownTable[Data.Name] = nil
+			end)
+			ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("End",Input.KeyCode.Name,Input.UserInputType.Name,Data,{game.Players.LocalPlayer:GetMouse().Hit})
+			HoldingKey = nil
+			HoldingKey2 = nil
+			CantUse = false
+			CantUseAgain = false
+		end
+	end
+end)
+
+ReplicatedStorage:WaitForChild("SystemRemoteEvent").OnClientEvent:Connect(function(Player,Action,Class,KeyCode,UserInputType,Infos)
+	
+	local Character = Player.Character
+	
+	for i,Modules in pairs(game:GetService("ReplicatedStorage"):FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(Class):GetChildren()) do
+		if Modules:GetAttribute("Input") == KeyCode or Modules:GetAttribute("Input") == UserInputType then
+			local Module = require(Modules)
+			local Assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name)
+			local Animation = game:GetService("ReplicatedStorage"):FindFirstChild("Animations"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name)
+
+			if game:GetService("ReplicatedStorage"):FindFirstChild("Assets"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name) then
+				Assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name)
+			else
+				Assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+			end
+
+			if game:GetService("ReplicatedStorage"):FindFirstChild("Animations"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name) then
+				Animation = game:GetService("ReplicatedStorage"):FindFirstChild("Animations"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name)
+			else
+				Animation = game:GetService("ReplicatedStorage"):FindFirstChild("Animations")
+			end
+			task.spawn(function()
+				if Player == script.Parent.Parent then
+					if Action == "Start" then
+						task.spawn(function()
+							if Player:FindFirstChild("ShowScreenEffects").Value == true then
+								Player:GetMouse().TargetFilter = Character
+								Module.StartCustomizableScreenVFX(Player,Assets,Animation,Infos)
+							end
+						end)
+						Module.StartScreenVFX(Player,Assets,Animation,Infos)
+					elseif Action == "End" then
+						task.spawn(function()
+							if Player:WaitForChild("ShowScreenEffects").Value == true then
+								Player:GetMouse().TargetFilter = Character
+								Module.EndCustomizableScreenVFX(Player,Assets,Animation,Infos)
+							end
+						end)
+						Module.EndScreenVFX(Player,Assets,Animation,Infos)
+					end
+				end
+			end)
+
+			if Action == "Start" then
+				Module.StartVFX(Player,Assets,Animation,Infos)
+			elseif Action == "End" then
+				Module.EndVFX(Player,Assets,Animation,Infos)
+			end	
+		end
+	end
+	
+end)
+
+local UsedActionHitBoxModule = nil
+
+HitBoxRemote.OnClientEvent:Connect(function(RetrievedData)
+
+	local Action = RetrievedData[1]
+	local Player = RetrievedData[2]
+	local Character = RetrievedData[3]
+	local DamageInfos = RetrievedData[4]
+	local HittedPlayer = RetrievedData[5]
+	local HittedCharacter = RetrievedData[6]
+	local ActionType = RetrievedData[7]
+	local UsedActionClass = RetrievedData[8]
+	local UsedAction = RetrievedData[9]
+	local ExplosionInfos = RetrievedData[10]
+	
+	UsedActionHitBoxModule = nil
+	
+	if ReplicatedStorage:FindFirstChild("System"):FindFirstChild("HitBoxes"):FindFirstChild(UsedActionClass):FindFirstChild(UsedAction) then
+		UsedActionHitBoxModule = require(ReplicatedStorage:WaitForChild("System"):WaitForChild("HitBoxes"):WaitForChild(UsedActionClass):WaitForChild(UsedAction))
+
+		if ExplosionInfos then
+			if ActionType == "Began" then
+				if Action == "Input" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForExplosionBegan(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "Client" then
+					task.spawn(function()
+						UsedActionHitBoxModule.ClientSideForExplosionBegan(Player,Character,DamageInfos,HittedPlayer,HittedCharacter,ExplosionInfos)
+					end)
+				end
+			elseif ActionType == "Ended" then
+				if Action == "Input" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForExplosionEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "Client" then
+					task.spawn(function()
+						UsedActionHitBoxModule.ClientSideForExplosionEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter,ExplosionInfos)
+					end)
+				end
+			end
+		else
+			if ActionType == "Began" then
+				if Action == "Input" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForHitBoxBegan(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "HittedInput" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForHitBoxHittedBegan(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "Client" then
+					task.spawn(function()
+						UsedActionHitBoxModule.ClientSideForHitBoxBegan(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				end
+			elseif ActionType == "Ended" then
+				if Action == "BothInput" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForALLHittedEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)	
+				elseif Action == "Input" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForHitBoxEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "HittedInput" then
+					task.spawn(function()
+						UsedActionHitBoxModule.OnlyClientSideForHitBoxHittedEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				elseif Action == "Client" then
+					task.spawn(function()
+						UsedActionHitBoxModule.ClientSideForHitBoxEnded(Player,Character,DamageInfos,HittedPlayer,HittedCharacter)
+					end)
+				end
+			end
+		end
+	end
+end)
