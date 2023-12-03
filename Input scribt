@@ -1,5 +1,5 @@
 task.wait(3)
-
+-- Getting services and stuff here
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -9,14 +9,14 @@ local HitBoxRemote = ReplicatedStorage:WaitForChild("HitBoxRemote")
 local SkillDatas = require(ReplicatedStorage:WaitForChild("System"):WaitForChild("SkillDatas"))
 
 --local Mouse = script.Parent.Parent:GetMouse()
-
+-- making this so you cant input and stuff for some while cause some assets take some time to load and stuff
 local HoldingKey = false
 local HoldingKey2 = false
 task.delay(1,function()
 	HoldingKey = nil
 	HoldingKey2 = nil
 end)
-local KeysTable = {"R","F","C","E","T"}
+local KeysTable = {"R","F","C","E","T"} --keys that you can use and variables
 
 local CantUse = false
 
@@ -26,17 +26,17 @@ local LastUsed
 
 local Data
 
-local CooldownTable = {}
+local CooldownTable = {} -- cooldown table
 
-UserInputService.InputBegan:Connect(function(Input,IsTyping)
+UserInputService.InputBegan:Connect(function(Input,IsTyping) --input
 	if IsTyping then return end
 	task.spawn(function()
-		if Input.KeyCode.Name == "W" or Input.KeyCode.Name == "S" or Input.KeyCode.Name == "A" or Input.KeyCode.Name == "D" then
+		if Input.KeyCode.Name == "W" or Input.KeyCode.Name == "S" or Input.KeyCode.Name == "A" or Input.KeyCode.Name == "D" then -- setting attributes so i can reach them from scripts and script combos and more stuff
 			ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("ChangeMovement",Input.KeyCode.Name,true)
 		end
 	end)
 	--table.insert(CooldownTable,HoldingKey)
-	
+	-- doing checks under this line
 	if CantUse == false and HoldingKey2 == nil and CantUseAgain == false and script.Parent.Parent.Character:GetAttribute("Stunned") == false  and script.Parent.Parent.Character:FindFirstChild("Configuration"):GetAttribute("ServerHolding") == false and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
 		if Input.KeyCode.Name ~= "Unknown" then 
 			if CooldownTable[Input.KeyCode.Name] ~= true then else return end 
@@ -50,12 +50,13 @@ UserInputService.InputBegan:Connect(function(Input,IsTyping)
 			HoldingKey = Input.UserInputType.Name
 		end
 		
-		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")]
+		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")] -- as you can see we are finding class data from our skill datas and finding the data for our used key
 		for i,v in pairs(FindingData) do
 			if FindingData[i] then
 				if FindingData[i].KeyCode then
 					if FindingData[i].KeyCode == HoldingKey then
 						Data = FindingData[i]
+-- return if cant find asset folder or required module
 						if not ReplicatedStorage:FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(script.Parent.Parent.Character.Configuration:GetAttribute("Class")):FindFirstChild(Data.Name) then return end
 					end
 				end
@@ -63,19 +64,19 @@ UserInputService.InputBegan:Connect(function(Input,IsTyping)
 		end
 		
 		if CooldownTable[Data.Name] ~= true then else return end
-		
+		-- getting another holdingkey2 for bug fix
 		if Input.KeyCode.Name ~= "Unknown" then
 			HoldingKey2 = Input.KeyCode.Name
 		elseif Input.UserInputType.Name ~= "Unknown" then
 			HoldingKey2 = Input.UserInputType.Name
 		end
 		
-		
+		--setting variables
 		CantUseAgain = true
 		CantUse = true
 		LastUsed = tick()
-		ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("Start",Input.KeyCode.Name,Input.UserInputType.Name,Data,{game.Players.LocalPlayer:GetMouse().Hit})
-		task.delay(Data["AutoRelease"],function()
+		ReplicatedStorage:WaitForChild("SystemRemoteEvent"):FireServer("Start",Input.KeyCode.Name,Input.UserInputType.Name,Data,{game.Players.LocalPlayer:GetMouse().Hit}) --firing to server and sending datas required
+		task.delay(Data["AutoRelease"],function() -- basically input released but we are detecting if maximum holding amount is reached and it still aint released then we basically do same thing with releaseing and setting variables in here if its a holdable skill
 			if CantUseAgain == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
 				
 				CantUseAgain = nil
@@ -100,7 +101,7 @@ UserInputService.InputBegan:Connect(function(Input,IsTyping)
 	end
 end)
 
-UserInputService.InputEnded:Connect(function(Input,IsTyping)
+UserInputService.InputEnded:Connect(function(Input,IsTyping) -- mostly like input began as you can see
 	if IsTyping then return end
 	task.spawn(function()
 		if Input.KeyCode.Name == "W" or Input.KeyCode.Name == "S" or Input.KeyCode.Name == "A" or Input.KeyCode.Name == "D" then
@@ -111,7 +112,7 @@ UserInputService.InputEnded:Connect(function(Input,IsTyping)
 	if CantUseAgain == true and (HoldingKey == Input.KeyCode.Name or HoldingKey == Input.UserInputType.Name) and (table.find(KeysTable,Input.KeyCode.Name) and Input.KeyCode.Name ~= "Unknown" or table.find(KeysTable,Input.UserInputType.Name) and Input.UserInputType.Name ~= "Unknown") then
 		CantUseAgain = nil
 		
-		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")]
+		local FindingData = SkillDatas.Datas[script.Parent.Parent.Character.Configuration:GetAttribute("Class")] -- as you can tell finding the data of released skill
 			for i,v in pairs(FindingData) do
 				if FindingData[i] then
 					if FindingData[i].KeyCode then
@@ -123,7 +124,7 @@ UserInputService.InputEnded:Connect(function(Input,IsTyping)
 				end
 			end
 		
-		repeat
+		repeat -- waiting until the required states are true so it wont glitch and waiting for minimmum holding duration if its a holdable skill
 			wait()
 		until script.Parent.Parent.Character:WaitForChild("Configuration"):GetAttribute("ServerHolding") == true --[[and script.Parent.Parent.Character:GetAttribute("Stunned") == true]] and CantUse == true and (tick() - LastUsed) >= Data["MinimumHoldingDuration"]
 		
@@ -145,7 +146,7 @@ ReplicatedStorage:WaitForChild("SystemRemoteEvent").OnClientEvent:Connect(functi
 	
 	local Character = Player.Character
 	
-	for i,Modules in pairs(game:GetService("ReplicatedStorage"):FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(Class):GetChildren()) do
+	for i,Modules in pairs(game:GetService("ReplicatedStorage"):FindFirstChild("System"):FindFirstChild("Modules"):FindFirstChild(Class):GetChildren()) do -- getting module from class and some checks/fixes under this line
 		if Modules:GetAttribute("Input") == KeyCode or Modules:GetAttribute("Input") == UserInputType then
 			local Module = require(Modules)
 			local Assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets"):FindFirstChild(Modules.Parent.Name):FindFirstChild(Modules.Name)
@@ -162,7 +163,7 @@ ReplicatedStorage:WaitForChild("SystemRemoteEvent").OnClientEvent:Connect(functi
 			else
 				Animation = game:GetService("ReplicatedStorage"):FindFirstChild("Animations")
 			end
-			task.spawn(function()
+			task.spawn(function() -- doing the skills input modules (screen effects screen shake type of thing)
 				if Player == script.Parent.Parent then
 					if Action == "Start" then
 						task.spawn(function()
@@ -183,7 +184,7 @@ ReplicatedStorage:WaitForChild("SystemRemoteEvent").OnClientEvent:Connect(functi
 					end
 				end
 			end)
-
+-- doing client module basically vfxs
 			if Action == "Start" then
 				Module.StartVFX(Player,Assets,Animation,Infos)
 			elseif Action == "End" then
@@ -196,8 +197,8 @@ end)
 
 local UsedActionHitBoxModule = nil
 
-HitBoxRemote.OnClientEvent:Connect(function(RetrievedData)
-
+HitBoxRemote.OnClientEvent:Connect(function(RetrievedData) --hitbox system client side
+-- getting datas and naming them
 	local Action = RetrievedData[1]
 	local Player = RetrievedData[2]
 	local Character = RetrievedData[3]
@@ -211,7 +212,7 @@ HitBoxRemote.OnClientEvent:Connect(function(RetrievedData)
 	
 	UsedActionHitBoxModule = nil
 	
-	if ReplicatedStorage:FindFirstChild("System"):FindFirstChild("HitBoxes"):FindFirstChild(UsedActionClass):FindFirstChild(UsedAction) then
+	if ReplicatedStorage:FindFirstChild("System"):FindFirstChild("HitBoxes"):FindFirstChild(UsedActionClass):FindFirstChild(UsedAction) then -- requiring the modules for used action depending on if skill is began or ended and making input modules depending on if the input is only used character or hitted character
 		UsedActionHitBoxModule = require(ReplicatedStorage:WaitForChild("System"):WaitForChild("HitBoxes"):WaitForChild(UsedActionClass):WaitForChild(UsedAction))
 
 		if ExplosionInfos then
